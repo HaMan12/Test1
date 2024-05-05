@@ -3,28 +3,300 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>測驗1</title>
+    <title>測驗</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <style>
+   .v-enter-active,
+   .v-leave-active {
+     transition: opacity 0.3s ease;
+   }
+   
+   .v-enter-from,
+   .v-leave-to {
+     opacity: 0;
+   }
+   .modal-outer{
+     position: fixed;
+     top: 0px;
+     left: 0px;
+     z-index: 10000;
+     height: 100vh;
+     width: 100%;
+     background-color: rgba(0,0,0,0.6);
+   }
+   
+   .modal{
+     position: absolute;
+     top: 50%;
+     left: 50%;
+     width: calc(100% - 30%);
+     --tw-translate-x: -50%;
+     --tw-translate-y: -50%;
+     transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+     overflow: hidden;
+     border-radius: 0.75rem;
+     --tw-bg-opacity: 1;
+     background-color: rgb(255 255 255 / var(--tw-bg-opacity));
+   }
+   
+    .openModels { 
+     display: block; 
+     opacity: 1;
+   }
+   
+   .openModels > .modal {
+     opacity: 1;
+   } 
+   
+   .modal-header{
+     position: relative;
+     padding-top: 1rem;
+     padding-bottom: 1rem;
+     text-align: left;
+     font-size: 0.875rem;
+     line-height: 1.25rem;
+     --tw-text-opacity: 1;
+     color: black;
+   }
+   
+   .modal-body{
+     --tw-bg-opacity: 1;
+     background-color: rgb(242 242 242 / var(--tw-bg-opacity));
+     padding: 1.25rem;
+     color: rgb(80, 80, 80, 0.75);
+   }
+   select {
+    color: black;
+   }
+   .imgBtn{
+     border: 1px dashed #6C6C6C;
+     border-radius: 8px;
+     width: 30%;
+     min-height: 200px;
+   }
+   .plus {
+    width: 20px;
+    height: 20px;
+    position: relative;
+    cursor: pointer;
+    }
+    .plus::before, .plus::after {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 3px;
+      background-color: #6C6C6C;
+      top: 50%;
+      left: 0;
+    }
 
-</style>
+    .plus::before {
+      transform: rotate(90deg);
+    }
+
+    .plus::after {
+      transform: rotate(180deg);
+    }
+   .center{
+     display: flex;
+     justify-content: center;
+     align-items: center;
+   }
+   .greenText{
+    color:#00DB00;
+   }
+   .hoverImg{
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.6);
+   }
+   .actions {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+   </style>
 <body>
-    <div id="app">
+    <div id="app" class="min-h-screen">
+
+        <div class="flex justify-center items-center h-screen">
+            <button type="button" class="border border-black rounded px-2 py-1" v-on:click="toggleModals()">請點選我打開</button>
+        </div>
 
 
-      </div>
+        <!-- 彈跳視窗 -->
+        <Transition>
+            <div class="modal-outer" v-if="toggleModal">
+                <div class="modal">
+                    <div class="modal-header">
+                        <h2 class="pl-3 text-lg">意見反饋</h2>
+                        <button class="absolute right-3 top-1/2 translate-y-[-50%]" v-on:click="toggleModals()">
+                            <img src="./iconClose.svg" alt="">
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="px-5">
+                            <h3 class="font-bold my-2"><span class="pr-2 text-[#CE0000]">*</span>類別</h3>
+                            <select class="w-full px-2 py-2 rounded">
+                                <option value="">請選擇類別</option>
+                                <option value="1">操作問題</option>
+                                <option value="2">優化建議</option>
+                                <option value="3">BUG反應</option>
+                                <option value="4">其它</option>
+                            </select>
+                            <h3 class="font-bold my-2"><span class="pr-2 text-[#CE0000]">*</span>標題 (限30字符內)</h3>
+                            <input type="text" class="w-full px-2 py-2 rounded" maxlength="30" placeholder="請輸入標題">
+                            <h3 class="font-bold my-2"><span class="pr-2 text-[#CE0000]">*</span>描述 (限300字符內)</h3>
+                            <textarea class="w-full px-2 py-2 rounded"></textarea maxlength="300">
+                            <h3 class="font-bold my-2"><span class="pr-2 text-[#CE0000]">*</span>參考圖片 (僅支持PNG JPG格式 ，每張5MB內)</h3>
+                            <div class="flex flex-wrap gap-2">
+                                <div class="imgBtn relative" v-for="(item, index) in images.slice(0,3)" :key="index" @mouseover="showHoverImg(index)" @mouseout="hideHoverImg(index)">
+                                    <button class="center w-full h-full">
+                                        <div class="plus" v-if="!images"></div>
+                                        <img v-if="images" :src="item.url" alt="Image">
+                                    </button>
+                                    <div class="hoverImg" v-show="showImg[index]"></div>
+                                    <div class="actions" v-show="showImg[index]">
+                                        <button class="text-white pr-3" @click="deleteImage(index)">刪除</button>
+                                        <button class="text-white" @click="zoomIn(index)">放大</button>
+                                      </div>
+                                </div>
+                                <div class="imgBtn" v-show="images.length < 3">
+                                    <button class="center w-full h-full" @click="imgFile()">
+                                        <div class="plus"></div>
+                                    </button>
+                                </div>
+                            </div>
+                            <p class="text-sm mt-2">可提供意見/問題截圖  (上傳數量 <span :class="{'greenText':images.length>0}">{{ images.length }}</span> / 3)</p>
+                            <div class="cursor-pointer my-5 bg-[#0072E3]" @click="submit()">
+                                <p class="text-center text-white py-2">提交</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </Transition>
+        <!-- 送出成功 -->
+        <Transition>
+            <div class="modal-outer" v-if="isModals">
+                <div class="modal" style="width: 300px;">
+                    <div class="modal-header">
+                        <button class="absolute right-3 top-1/2 translate-y-[-50%]" v-on:click="submitClose()">
+                            <img src="./iconClose.svg" alt="">
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p>提交成功</p>
+                    </div>
+                </div>
+            </div>
+          </Transition>
+          <!-- 放大 -->
+          <Transition>
+            <div class="modal-outer" v-if="Bigmodal">
+                <div class="modal" style="width: 500px;">
+                    <div class="modal-header">
+                        <button class="absolute right-3 top-1/2 translate-y-[-50%]" v-on:click="BigmodalClose()">
+                            <img src="./iconClose.svg" alt="">
+                        </button>
+                    </div>
+                    <div class="modal-body center">
+                      <img v-if="images" :src="images[selectedImage].url" alt="Image">
+                    </div>
+                </div>
+            </div>
+          </Transition>
+    </div>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 
-    <script>
-      const { createApp , ref } = Vue;
+    <script type="module">
+      const { createApp , ref , onMounted , reactive} = Vue;
 
       const app = createApp({
         setup(){
-            const count = ref(0)
+            const toggleModal = ref(false)
 
+            const toggleModals = () =>{
+                toggleModal.value = !toggleModal.value
+            }
+
+            // 上傳
+            const images = reactive([])
+
+            const imgFile = () =>{
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.accept = '.jpg, .jpeg, .png';
+                fileInput.style.display = 'none';
+                document.body.appendChild(fileInput);
+
+                fileInput.addEventListener('change', () => {
+                const file = fileInput.files[0];
+                const fileSize = 5 * 1024 * 1024; // 5MB
+
+                if (file.size > fileSize) {
+                    alert('圖片大小不能超過 5MB');
+                 return;
+                }
+
+                const imageUrlValue = URL.createObjectURL(file);
+                images.push({ url: imageUrlValue });
+            });
+                fileInput.click();
+            }
+
+            // 刪除 放大
+            const showImg = reactive([]);
+
+            const showHoverImg = (index) => {
+              showImg[index] = true;
+            };
+
+            const hideHoverImg = (index) => {
+              showImg[index] = false;
+            };
+
+            const deleteImage = (index) => {
+              images.splice(index, 1);
+              hideHoverImg(index);
+            };
+            const Bigmodal = ref(false);
+            const selectedImage = ref(null);
+            const zoomIn = (index) => {
+              selectedImage.value = index;
+              Bigmodal.value = true; 
+            };
+
+            const BigmodalClose =()=> {
+              Bigmodal.value = false; 
+            }
+            // 提交
+            const isModals = ref(false);
+            const submit = () => {
+              isModals.value = true;
+              setTimeout(() => {
+                submitClose();
+              }, 5000);
+            };
+
+            const submitClose = ()=>{
+              isModals.value = false;
+              toggleModal.value = false;
+            }
+
+            onMounted(() => {
+             console.log(showImg);
+            });
+            
             return{
-                count
+                toggleModal,images,isModals,showImg,Bigmodal,selectedImage,
+                toggleModals,imgFile,submit,submitClose,
+                showHoverImg,hideHoverImg,deleteImage,zoomIn,BigmodalClose
             } 
         }
     });
